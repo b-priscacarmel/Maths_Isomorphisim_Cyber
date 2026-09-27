@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IoT Botnet Detection via Isomorphism &amp; Color Refinement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#11151b;--panel:#1a212b;--panel2:#212a36;--text:#e8edf3;--muted:#8996a8;--border:#2b3644;
+  --hub:#e2596b;--leaf:#e2a63d;--normal:#45c4a0;--sig:#6ea8e6;--relay:#b083e0;
+  --font-display:'Fraunces',Georgia,serif;--font-body:'Inter',system-ui,sans-serif;--font-mono:ui-monospace,'SF Mono',Consolas,monospace;
+}
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){--bg:#f5f3ee;--panel:#fff;--panel2:#eef0f0;--text:#1a1f26;--muted:#6b7684;--border:#dcdfe3;}}
+:root[data-theme="light"]{--bg:#f5f3ee;--panel:#fff;--panel2:#eef0f0;--text:#1a1f26;--muted:#6b7684;--border:#dcdfe3;}
+*{box-sizing:border-box;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--font-body);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);min-height:100%;}
+.wrap{max-width:1040px;margin:0 auto;padding:2.2rem 1.25rem 4rem;}
+h1{font-family:var(--font-display);font-weight:600;font-size:1.85rem;margin:0 0 .3rem;letter-spacing:-.01em;}
+.sub{
+  color:var(--muted);
+  width:100%;
+  max-width:none;
+  line-height:1.5;
+  margin:0 0 1rem;
+  font-size:.96rem;
+  text-align:justify;
+}
+.callout{background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--relay);border-radius:8px;padding:.7rem .9rem;font-size:.83rem;color:var(--muted);margin-bottom:1.3rem;line-height:1.55;}
+.callout b{color:var(--text);}
+.row{display:grid;grid-template-columns:2fr 1fr;gap:.9rem;margin-bottom:1rem;}
+.gcard{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.7rem .6rem 1rem;text-align:center;}
+.gcard h3{font-family:var(--font-display);font-weight:600;font-size:1rem;margin:.1rem 0 .5rem;}
+.gcard p{color:var(--muted);font-size:.76rem;margin:.4rem 0 0;}
+svg{width:100%;height:auto;display:block;}
+.node{stroke:var(--text);stroke-width:1.1;}
+.n-hub{fill:var(--hub);}.n-leaf{fill:var(--leaf);}.n-relay{fill:var(--relay);}.n-sig{fill:var(--sig);}
+.edge{stroke:var(--text);stroke-opacity:.5;stroke-width:1.2;}
+.edge-match{stroke:var(--hub);stroke-opacity:.95;stroke-width:2.3;}
+.lbl{fill:var(--text);font-size:8px;font-family:var(--font-body);}
+.roundbar{display:flex;gap:.4rem;justify-content:center;margin-top:.5rem;}
+.roundbar button{font-size:.72rem;padding:.3rem .6rem;border-radius:6px;border:1px solid var(--border);background:var(--panel2);color:var(--text);cursor:pointer;}
+.roundbar button.active{background:var(--sig);color:#0c1620;border-color:var(--sig);}
+.chip{display:inline-block;font-family:var(--font-mono);font-size:.72rem;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:.15rem .5rem;margin-top:.4rem;}
+.legend{display:flex;flex-wrap:wrap;gap:.85rem;font-size:.73rem;color:var(--muted);margin:.2rem 0 1.1rem;}
+.legend span{display:inline-flex;align-items:center;gap:.35rem;}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+.controls{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-bottom:.6rem;}
+button.act{font-family:var(--font-body);font-weight:600;font-size:.84rem;padding:.6rem 1rem;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);cursor:pointer;}
+button.act:hover{border-color:var(--hub);}
+button.primary{background:var(--hub);color:#210a0e;border-color:var(--hub);}
+select{font-family:var(--font-body);font-size:.84rem;padding:.55rem .7rem;border-radius:8px;border:1px solid var(--border);background:var(--panel);color:var(--text);}
+.toggle{display:flex;align-items:center;gap:.5rem;font-size:.84rem;color:var(--muted);}
+.controls2{display:flex;flex-wrap:wrap;gap:.9rem;align-items:center;margin-bottom:1.1rem;}
+.grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:1rem;}
+@media (max-width:700px){.grid2{grid-template-columns:1fr;}.row{grid-template-columns:1fr;}}
+.log{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.8rem 1rem;max-height:230px;overflow-y:auto;}
+.log h3,.stats h3{font-family:var(--font-display);font-weight:600;font-size:1rem;margin:0 0 .6rem;}
+.entry{font-family:var(--font-mono);font-size:.76rem;padding:.3rem 0;border-bottom:1px dashed var(--border);word-break:break-all;}
+.entry:last-child{border-bottom:none;}
+.stats{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:.9rem 1.1rem;}
+.big{font-family:var(--font-display);font-size:1.25rem;font-weight:600;line-height:1.25;}
+.statrow{display:flex;justify-content:space-between;padding:.4rem 0;border-bottom:1px dashed var(--border);font-size:.83rem;gap:.5rem;}
+.statrow:last-child{border-bottom:none;}
+.statrow span:last-child{color:var(--muted);font-family:var(--font-mono);font-size:.75rem;text-align:right;}
+footer{color:var(--muted);font-size:.77rem;margin-top:1.5rem;line-height:1.55;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Detecting a botnet through iterative colour refinement</h1>
+  <p class="sub" style="text-align: justify;">
+  Every node starts coloured only by its degree. Each round, a node recomputes its colour from its own colour plus the sorted colours of its neighbours — this <b>is</b> the 1-Weisfeiler-Lehman algorithm, and it's the exact mechanism a Graph Isomorphism Network layer performs. After enough rounds, a device's colour is a certificate of its local structural role. A botnet hub is found by matching certificates against the known signature's hub certificate.
+</p>
+  <div class="callout"><b>Why this matters:</b> two structures can only be truly isomorphic if their WL colours match at every round — so an exact colour match is a strong (though not perfect) isomorphism certificate. Route the attack through a relay and the hub's neighbourhood colours change, breaking the certificate — showing precisely why GIN alone isn't unbeatable, and why detection systems combine it with other signals.</div>
+
+  <div class="row">
+    <div class="gcard">
+      <h3>IoT Device Network</h3>
+      <svg id="svgNet" viewBox="0 0 320 320"></svg>
+      <div class="roundbar" id="roundbar"></div>
+      <p id="netNote">colour = WL certificate at the selected round</p>
+    </div>
+    <div class="gcard">
+      <h3>Known Botnet Signature</h3>
+      <svg id="svgSig" viewBox="0 0 170 170"></svg>
+      <p>hub certificate (round 2):</p>
+      <span class="chip" id="sigChip">—</span>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--hub)"></span>matched hub</span>
+    <span><span class="dot" style="background:var(--leaf)"></span>matched leaf</span>
+    <span><span class="dot" style="background:var(--relay)"></span>relay / proxy</span>
+    <span><span class="dot" style="background:var(--sig)"></span>signature node</span>
+    <span>other nodes are tinted by their WL colour, not by role</span>
+  </div>
+
+  <div class="controls">
+    <button class="act primary" id="btnNew">New network</button>
+    <button class="act" id="btnRun">Run detection</button>
+  </div>
+  <div class="controls2">
+    <label class="toggle"><input type="checkbox" id="embedToggle" checked> Embed a real botnet cluster</label>
+    <label class="toggle"><input type="checkbox" id="evadeToggle"> Route via relay (evasion)</label>
+    <label class="toggle">Method:
+      <select id="methodSelect">
+        <option value="wl">WL certificate match (exact isomorphism cert.)</option>
+        <option value="depth2">2-hop neighbourhood match (relay-tolerant)</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="grid2">
+    <div class="log"><h3>Detection log</h3><div id="logList"><div class="entry" style="color:var(--muted)">Generate a network, then run detection.</div></div></div>
+    <div class="stats">
+      <h3>Result</h3>
+      <div class="big" id="verdict">—</div>
+      <div class="statrow"><span>devices scanned</span><span id="statN">16</span></div>
+      <div class="statrow"><span>WL rounds run</span><span>2</span></div>
+      <div class="statrow"><span>candidate hub cert.</span><span id="statCert">—</span></div>
+      <div class="statrow"><span>matched devices</span><span id="statMatch">none</span></div>
+    </div>
+  </div>
+
+  <footer>This mirrors Xu et al.'s theoretical result (the paper that introduced GIN): a GIN's expressive power is bounded above by the 1-WL test — it can never distinguish structures 1-WL can't, but with training it approximates this refinement over huge graphs where exact backtracking search is infeasible. Yin et al.'s IoT detector trades our exact string-certificate matching for a learned, tolerant version of the same colour-refinement idea, at a scale of millions of devices.</footer>
+</div>
+
+<script>
+const N = 16, CX = 160, CY = 160, R = 130;
+let edges = [], degree = [], wlColors = [[],[],[]], sigColors = [[],[],[]];
+let currentRound = 2, resultMap = null;
+
+function pos(i,n,cx,cy,r){ const a=-Math.PI/2+i*2*Math.PI/n; return [cx+r*Math.cos(a), cy+r*Math.sin(a)]; }
+function neighborsOf(edgeList, v){ const s=[]; edgeList.forEach(([a,b])=>{ if(a===v) s.push(b); if(b===v) s.push(a); }); return s; }
+function hasEdge(a,b){ return edges.some(([x,y])=>(x===a&&y===b)||(x===b&&y===a)); }
+
+function hashStr(str){ let h=0; for(let i=0;i<str.length;i++){ h=(h*31+str.charCodeAt(i))>>>0; } return h; }
+function hue(str){ return hashStr(str)%360; }
+
+function computeWL(edgeList, n, rounds){
+  const cols=[]; let cur = [];
+  for(let v=0; v<n; v++) cur.push('d'+neighborsOf(edgeList,v).length);
+  cols.push(cur.slice());
+  for(let r=1;r<=rounds;r++){
+    const next=[];
+    for(let v=0; v<n; v++){
+      const nbrCols = neighborsOf(edgeList,v).map(u=>cur[u]).sort();
+      next.push(cur[v]+'|'+nbrCols.join(','));
+    }
+    cols.push(next.slice());
+    cur = next;
+  }
+  return cols; // [round0, round1, round2]
+}
+
+function buildNetwork(embed, evade){
+  edges=[];
+  for(let i=0;i<N;i++) for(let j=i+1;j<N;j++) if(Math.random()<0.08) edges.push([i,j]);
+  if(embed){
+    const hub=0, leaves=[1,2,3,4];
+    if(!evade){
+      leaves.forEach(l=>{ if(!hasEdge(hub,l)) edges.push([hub,l]); });
+    } else {
+      const relay=5;
+      [[hub,leaves[0]],[hub,leaves[1]],[hub,relay],[relay,leaves[2]],[relay,leaves[3]]].forEach(([a,b])=>{ if(!hasEdge(a,b)) edges.push([a,b]); });
+    }
+  }
+  degree = Array(N).fill(0);
+  edges.forEach(([a,b])=>{ degree[a]++; degree[b]++; });
+  wlColors = computeWL(edges, N, 2);
+  const sigEdges=[[0,1],[0,2],[0,3],[0,4]];
+  sigColors = computeWL(sigEdges, 5, 2);
+  document.getElementById('sigChip').textContent = sigColors[2][0].slice(0,40)+'…';
+}
+
+function drawSignature(){
+  const svg=document.getElementById('svgSig'); const n=5,cx=85,cy=85,r=58; let s='';
+  for(let i=1;i<5;i++){ const [x1,y1]=pos(0,n,cx,cy,r),[x2,y2]=pos(i,n,cx,cy,r); s+=`<line class="edge" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`; }
+  for(let i=0;i<n;i++){ const [x,y]=pos(i,n,cx,cy,r); s+=`<circle class="node n-sig" cx="${x}" cy="${y}" r="11"/><text class="lbl" x="${x}" y="${y+3}" text-anchor="middle">${i===0?'hub':'L'}</text>`; }
+  svg.innerHTML=s;
+}
+
+function drawNetwork(){
+  const svg=document.getElementById('svgNet'); let s='';
+  edges.forEach(([u,v])=>{
+    const [x1,y1]=pos(u,N,CX,CY,R),[x2,y2]=pos(v,N,CX,CY,R);
+    const isMatch = resultMap && resultMap.has(u) && resultMap.has(v);
+    s+=`<line class="${isMatch?'edge-match':'edge'}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+  });
+  for(let i=0;i<N;i++){
+    const [x,y]=pos(i,N,CX,CY,R);
+    let fillAttr;
+    if(resultMap && resultMap.has(i)){
+      const role=resultMap.get(i);
+      const cls = role===0?'n-hub':role===2?'n-relay':'n-leaf';
+      s+=`<circle class="node ${cls}" cx="${x}" cy="${y}" r="12"/><text class="lbl" x="${x}" y="${y+3}" text-anchor="middle">${i}</text>`;
+      continue;
+    }
+    const col = wlColors[currentRound][i];
+    fillAttr = `fill:hsl(${hue(col)},55%,55%)`;
+    s+=`<circle class="node" style="${fillAttr}" cx="${x}" cy="${y}" r="12"/><text class="lbl" x="${x}" y="${y+3}" text-anchor="middle">${i}</text>`;
+  }
+  svg.innerHTML=s;
+}
+
+function buildRoundbar(){
+  const bar=document.getElementById('roundbar'); bar.innerHTML='';
+  [0,1,2].forEach(r=>{
+    const b=document.createElement('button');
+    b.textContent='Round '+r; if(r===currentRound) b.classList.add('active');
+    b.addEventListener('click', ()=>{ currentRound=r; resultMap=null; buildRoundbar(); drawNetwork(); });
+    bar.appendChild(b);
+  });
+}
+
+function log(msg){ const list=document.getElementById('logList');
+  if(list.children.length===1 && list.children[0].style.color) list.innerHTML='';
+  const d=document.createElement('div'); d.className='entry'; d.textContent=msg; list.prepend(d); }
+
+function setResult(text,color,cert,matchText){
+  document.getElementById('verdict').textContent=text;
+  document.getElementById('verdict').style.color=color;
+  document.getElementById('statCert').textContent=cert;
+  document.getElementById('statMatch').textContent=matchText;
+}
+
+function runWLMatch(){
+  document.getElementById('logList').innerHTML='';
+  const sigCert = sigColors[2][0];
+  log('Signature hub certificate (round 2): '+sigCert.slice(0,50)+'…');
+  for(let v=0; v<N; v++){
+    const cert = wlColors[2][v];
+    log('Node '+v+' certificate: '+cert.slice(0,40)+(cert.length>40?'…':''));
+    if(cert===sigCert){
+      const leaves = neighborsOf(edges,v);
+      const map=new Map(); map.set(v,0); leaves.forEach(l=>map.set(l,1));
+      log('EXACT MATCH: node '+v+' certificate equals signature hub certificate.');
+      resultMap=map;
+      setResult('Isomorphism certificate matched','var(--hub)',cert.slice(0,20)+'…','hub '+v+', leaves '+leaves.join(','));
+      drawNetwork();
+      return;
+    }
+  }
+  log('No node has a round-2 certificate equal to the signature hub certificate.');
+  resultMap=null;
+  setResult('No certificate match (evaded?)','var(--leaf)','—','none');
+  drawNetwork();
+}
+
+function bfsDepth2(start){
+  const seen=new Map([[start,0]]); const q=[start];
+  while(q.length){ const cur=q.shift(); const d=seen.get(cur); if(d>=2) continue;
+    neighborsOf(edges,cur).forEach(nb=>{ if(!seen.has(nb)){ seen.set(nb,d+1); q.push(nb);} }); }
+  return seen;
+}
+
+function runDepth2(){
+  document.getElementById('logList').innerHTML='';
+  log('2-hop test: does this candidate reach >=4 other devices within 2 hops?');
+  const cands=[...Array(N).keys()].filter(v=>degree[v]>=2).sort((a,b)=>degree[b]-degree[a]);
+  for(const v of cands){
+    const reach=bfsDepth2(v); const others=[...reach.keys()].filter(k=>k!==v);
+    log('Node '+v+': reaches '+others.length+' devices within 2 hops.');
+    if(others.length>=4){
+      const map=new Map(); map.set(v,0);
+      others.forEach(k=>{ map.set(k, reach.get(k)===1?2:1); });
+      log('MATCH: node '+v+' 2-hop neighbourhood ['+others.join(', ')+'] meets botnet scale.');
+      resultMap=map;
+      setResult('Cluster found (relay-tolerant)','var(--hub)','—','hub '+v+', reach '+others.join(','));
+      drawNetwork();
+      return;
+    }
+  }
+  log('No candidate reaches enough devices within 2 hops.');
+  resultMap=null;
+  setResult('No match found','var(--normal)','—','none');
+  drawNetwork();
+}
+
+document.getElementById('btnNew').addEventListener('click', ()=>{
+  buildNetwork(document.getElementById('embedToggle').checked, document.getElementById('evadeToggle').checked);
+  resultMap=null; currentRound=2; buildRoundbar(); drawNetwork();
+  setResult('—','var(--text)','—','none');
+  document.getElementById('logList').innerHTML='<div class="entry" style="color:var(--muted)">New network generated. Run detection.</div>';
+});
+document.getElementById('btnRun').addEventListener('click', ()=>{
+  const m=document.getElementById('methodSelect').value;
+  if(m==='wl') runWLMatch(); else runDepth2();
+});
+
+drawSignature();
+buildNetwork(true,false);
+buildRoundbar();
+drawNetwork();
+</script>
+</body>
+</html>
